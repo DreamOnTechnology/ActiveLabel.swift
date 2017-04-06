@@ -441,9 +441,13 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
 
         let index = layoutManager.glyphIndex(for: correctLocation, in: textContainer)
         
-        for element in activeElements.map({ $0.1 }).joined() {
-            if index >= element.range.location && index <= element.range.location + element.range.length {
-                return element
+        for type in enabledTypes.reversed() {
+            if let elements = activeElements[type] {
+                for element in elements {
+                    if index >= element.range.location && index <= element.range.location + element.range.length {
+                        return element
+                    }
+                }
             }
         }
 

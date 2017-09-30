@@ -21,7 +21,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
     // MARK: - public properties
     open weak var delegate: ActiveLabelDelegate?
 
-    open var enabledTypes: [ActiveType] = [.mention, .hashtag, .url]
+    open var enabledTypes: [ActiveType] = [.mention, .hashtag, .ahref, .url]
 
     open var urlMaximumLength: Int?
     
@@ -94,6 +94,8 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         case .mention:
             mentionTapHandler = nil
         case .url:
+            urlTapHandler = nil
+        case .ahref:
             urlTapHandler = nil
         case .custom:
             customTapHandlers[type] = nil
@@ -212,6 +214,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .mention(let userHandle): didTapMention(userHandle)
             case .hashtag(let hashtag): didTapHashtag(hashtag)
             case .url(let originalURL, _): didTapStringURL(originalURL)
+            case .ahref(let originalURL, _): didTapStringURL(originalURL)
             case .custom(let element): didTap(element, for: selectedElement.type)
             }
             
@@ -318,6 +321,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .mention: attributes[NSForegroundColorAttributeName] = mentionColor
             case .hashtag: attributes[NSForegroundColorAttributeName] = hashtagColor
             case .url: attributes[NSForegroundColorAttributeName] = URLColor
+            case .ahref: attributes[NSForegroundColorAttributeName] = URLColor
             case .custom: attributes[NSForegroundColorAttributeName] = customColor[type] ?? defaultCustomColor
             }
             
@@ -341,6 +345,16 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
         var textLength = textString.utf16.count
         var textRange = NSRange(location: 0, length: textLength)
 
+        if enabledTypes.contains(.ahref) {
+            let tuple = ActiveBuilder.createAHREFElements(from: textString, range: textRange)
+            let urlElements = tuple.0
+            let finalText = tuple.1
+            textString = finalText
+            textLength = textString.utf16.count
+            textRange = NSRange(location: 0, length: textLength)
+            activeElements[.ahref] = urlElements
+        }
+
         if enabledTypes.contains(.url) {
             let tuple = ActiveBuilder.createURLElements(from: textString, range: textRange, maximumLenght: urlMaximumLength)
             let urlElements = tuple.0
@@ -351,7 +365,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             activeElements[.url] = urlElements
         }
 
-        for type in enabledTypes where type != .url {
+        for type in enabledTypes where (type != .url && type != .ahref) {
             var filter: ((String) -> Bool)? = nil
             if type == .mention {
                 filter = mentionFilterPredicate
@@ -398,6 +412,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .mention: selectedColor = mentionSelectedColor ?? mentionColor
             case .hashtag: selectedColor = hashtagSelectedColor ?? hashtagColor
             case .url: selectedColor = URLSelectedColor ?? URLColor
+            case .ahref: selectedColor = URLSelectedColor ?? URLColor
             case .custom:
                 let possibleSelectedColor = customSelectedColor[selectedElement.type] ?? customColor[selectedElement.type]
                 selectedColor = possibleSelectedColor ?? defaultCustomColor
@@ -409,6 +424,7 @@ typealias ElementTuple = (range: NSRange, element: ActiveElement, type: ActiveTy
             case .mention: unselectedColor = mentionColor
             case .hashtag: unselectedColor = hashtagColor
             case .url: unselectedColor = URLColor
+            case .ahref: unselectedColor = URLColor
             case .custom: unselectedColor = customColor[selectedElement.type] ?? defaultCustomColor
             }
             attributes[NSForegroundColorAttributeName] = unselectedColor

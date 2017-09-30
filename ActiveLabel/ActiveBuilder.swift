@@ -18,6 +18,8 @@ struct ActiveBuilder {
             return createElementsIgnoringFirstCharacter(from: text, for: type, range: range, filterPredicate: filterPredicate)
         case .url:
             return createElements(from: text, for: type, range: range, filterPredicate: filterPredicate)
+        case .ahref:
+            return createElements(from: text, for: type, range: range, filterPredicate: filterPredicate)
         case .custom:
             return createElements(from: text, for: type, range: range, minLength: 1, filterPredicate: filterPredicate)
         }
@@ -47,6 +49,34 @@ struct ActiveBuilder {
             let newRange = (text as NSString).range(of: trimmedWord)
             let element = ActiveElement.url(original: word, trimmed: trimmedWord)
             elements.append((newRange, element, type))
+        }
+        return (elements, text)
+    }
+
+    static func createAHREFElements(from text: String, range: NSRange) -> ([ElementTuple], String) {
+        let type = ActiveType.ahref
+        var text = text
+        let matches = RegexParser.getElements(from: text, with: type.pattern, range: range)
+        let nsstring = text as NSString
+        var elements: [ElementTuple] = []
+
+        let results = matches.map { result in
+            (0..<result.numberOfRanges).map { result.rangeAt($0).location != NSNotFound
+                ? (text as NSString).substring(with: result.rangeAt($0))
+                : ""
+            }
+        }
+        for result in results where result.count > 2 {
+            let wholeString = result[0]
+            let url = result[1]
+            let word = result[2]
+
+            if let range = text.range(of: wholeString) {
+                text = text.replacingCharacters(in: range, with: word)
+                let newRange = (text as NSString).range(of: word)
+                let element = ActiveElement.ahref(original: url, trimmed: url)
+                elements.append((newRange, element, type))
+            }
         }
         return (elements, text)
     }

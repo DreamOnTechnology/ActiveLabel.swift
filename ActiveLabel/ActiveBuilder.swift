@@ -61,8 +61,8 @@ struct ActiveBuilder {
         var elements: [ElementTuple] = []
 
         let results = matches.map { result in
-            (0..<result.numberOfRanges).map { result.rangeAt($0).location != NSNotFound
-                ? (text as NSString).substring(with: result.rangeAt($0))
+            (0..<result.numberOfRanges).map { result.range(at: $0).location != NSNotFound
+                ? (text as NSString).substring(with: result.range(at: $0))
                 : ""
             }
         }
